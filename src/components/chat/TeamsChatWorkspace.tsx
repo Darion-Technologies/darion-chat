@@ -3128,6 +3128,8 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
               activeNavShortcut={activeNavShortcut}
               onlineUserIds={onlineUserIds}
               userPresenceMap={userPresenceMap}
+              showHeader={true}
+              onClose={() => setShowMobileMenuDrawer(false)}
               onSelectShortcut={(s) => {
                 setActiveNavShortcut(s)
                 setShowMobileMenuDrawer(false)

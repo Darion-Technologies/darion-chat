@@ -24,6 +24,7 @@ import {
   Maximize2,
   Ban,
   EyeOff,
+  Menu,
 } from 'lucide-react'
 import {
   ChatConversationItem,
@@ -47,6 +48,8 @@ interface ChatNavColumnProps {
   onBrowseSpaces?: () => void
   onlineUserIds?: Set<string>
   userPresenceMap?: Record<string, { status: string; statusMessage?: string }>
+  showHeader?: boolean
+  onClose?: () => void
 }
 
 export const ChatNavColumn: React.FC<ChatNavColumnProps> = ({
@@ -60,6 +63,8 @@ export const ChatNavColumn: React.FC<ChatNavColumnProps> = ({
   onBrowseSpaces,
   onlineUserIds,
   userPresenceMap,
+  showHeader = false,
+  onClose,
 }) => {
   const [shortcutsOpen, setShortcutsOpen] = useState(true)
   const [dmsOpen, setDmsOpen] = useState(true)
@@ -131,7 +136,35 @@ export const ChatNavColumn: React.FC<ChatNavColumnProps> = ({
   }
 
   return (
-    <aside className="w-60 lg:w-64 h-full shrink-0 bg-[var(--md-sys-color-surface-container-low)] border-r border-[var(--md-sys-color-outline-variant)] flex flex-col select-none overflow-y-auto">
+    <aside className="w-full lg:w-64 h-full shrink-0 bg-[var(--md-sys-color-surface-container-low)] border-r border-[var(--md-sys-color-outline-variant)] flex flex-col select-none overflow-y-auto no-scrollbar">
+      {/* 0. BRAND HEADER (Logo + Title + Menu Lines) */}
+      {showHeader && (
+        <div className="h-14 px-4 flex items-center justify-between border-b border-[var(--md-sys-color-outline-variant)]/60 bg-[var(--md-sys-color-surface-container-lowest)] shrink-0 select-none">
+          <div className="flex items-center gap-3">
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 -ml-2 rounded-full text-[var(--md-sys-color-on-surface)] hover:bg-[var(--md-sys-color-surface-container-high)] active:scale-95 transition-all cursor-pointer"
+                title="Close menu"
+              >
+                <Menu className="w-5 h-5 stroke-[2.5]" />
+              </button>
+            )}
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#0B57D0] flex items-center justify-center text-white font-bold text-sm shadow-xs shrink-0 select-none">
+                <svg viewBox="0 0 24 24" className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </div>
+              <span className="text-base font-bold text-[var(--md-sys-color-on-surface)] tracking-tight font-sans">
+                Darion Chat
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. TOP '+ New chat' PILL BUTTON */}
       <div className="p-3">
         <button
@@ -259,10 +292,10 @@ export const ChatNavColumn: React.FC<ChatNavColumnProps> = ({
                             <img
                               src={dm.avatarUrl}
                               alt=""
-                              className="w-5 h-5 rounded-full object-cover border border-[var(--md-sys-color-outline-variant)]"
+                              className="w-6 h-6 rounded-full object-cover border border-[var(--md-sys-color-outline-variant)]"
                             />
                           ) : (
-                            <div className="w-5 h-5 rounded-full bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] flex items-center justify-center font-bold text-[10px]">
+                            <div className="w-6 h-6 rounded-full bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] flex items-center justify-center font-bold text-xs">
                               {dm.name.charAt(0).toUpperCase()}
                             </div>
                           )}

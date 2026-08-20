@@ -122,30 +122,30 @@ export const GoogleChatHeader: React.FC<GoogleChatHeaderProps> = ({
     <header className="w-full bg-[var(--md-sys-color-surface-container-lowest)] border-b border-[var(--md-sys-color-outline-variant)] px-3 sm:px-4 pt-[max(env(safe-area-inset-top,0px),0px)] flex flex-col justify-center min-h-[calc(3.5rem+max(env(safe-area-inset-top,0px),0px))] shrink-0 z-40 select-none">
       <div className="h-14 w-full flex items-center justify-between gap-2 sm:gap-4">
         {/* 1. LEFT BRANDING */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        <button
-          type="button"
-          onClick={onToggleSidebar}
-          className="p-2 rounded-full text-[var(--md-sys-color-on-surface-variant)] hover:bg-[var(--md-sys-color-surface-container-high)] hover:text-[var(--md-sys-color-on-surface)] transition-colors cursor-pointer"
-          title="Main menu"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="p-2 rounded-full text-[var(--md-sys-color-on-surface)] hover:bg-[var(--md-sys-color-surface-container-high)] active:scale-95 transition-all cursor-pointer"
+            title="Main menu"
+          >
+            <Menu className="w-5 h-5 stroke-[2.5]" />
+          </button>
 
-        <div className="hidden sm:flex items-center gap-2.5 cursor-pointer" onClick={() => (window.location.href = '/')}>
-          {/* Darion Brand Logo */}
-          <div className="w-8 h-8 rounded-xl bg-[#0B57D0] flex items-center justify-center text-white font-bold text-sm shadow-xs shrink-0 select-none">
-            <svg viewBox="0 0 24 24" className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-          </div>
-          <div className="flex items-baseline select-none">
-            <span className="text-base sm:text-lg font-bold text-[var(--md-sys-color-on-surface)] tracking-tight font-sans">
-              Darion Chat
-            </span>
+          <div className="flex items-center gap-2 sm:gap-2.5 cursor-pointer" onClick={() => (window.location.href = '/')}>
+            {/* Darion Brand Logo */}
+            <div className="w-8 h-8 rounded-xl bg-[#0B57D0] flex items-center justify-center text-white font-bold text-sm shadow-xs shrink-0 select-none">
+              <svg viewBox="0 0 24 24" className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+            <div className="flex items-baseline select-none">
+              <span className="text-base sm:text-lg font-bold text-[var(--md-sys-color-on-surface)] tracking-tight font-sans hidden xs:inline sm:inline">
+                Darion Chat
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* 2. CENTER CAPSULE OMNIBOX SEARCH BAR */}
       <div className="flex-1 max-w-2xl px-2">
