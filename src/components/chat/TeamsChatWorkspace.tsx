@@ -128,6 +128,7 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
   const [threadInputText, setThreadInputText] = useState('')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showMobileSidebar, setShowMobileSidebar] = useState(false)
+  const [showMobileMenuDrawer, setShowMobileMenuDrawer] = useState(false)
   const [isFirstSidebarOpen, setIsFirstSidebarOpen] = useState(true)
   const [activeMobileTab, setActiveMobileTab] = useState<'home' | 'dms' | 'spaces'>('home')
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false)
@@ -1741,14 +1742,20 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
           isManuallySetRef.current = newSt
           trackPresenceState(newSt, newSt === 'dnd' ? 'Do not disturb' : '')
         }}
-        onToggleSidebar={() => setIsFirstSidebarOpen(!isFirstSidebarOpen)}
+        onToggleSidebar={() => {
+          if (typeof window !== 'undefined' && window.innerWidth < 768) {
+            setShowMobileMenuDrawer((prev) => !prev)
+          } else {
+            setIsFirstSidebarOpen((prev) => !prev)
+          }
+        }}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* 2. MAIN 3-PANE + COMPANION RAIL BODY */}
       <div className="flex-1 flex min-h-0 w-full overflow-hidden relative">
-        {/* 2.1 FIRST SIDEBAR (Below Darion Chat: Shortcuts, DMs, Spaces) */}
-        <div className={`${isFirstSidebarOpen ? 'flex' : 'hidden'} shrink-0 h-full transition-all duration-150`}>
+        {/* 2.1 FIRST SIDEBAR (Desktop Only: Shortcuts, DMs, Spaces) */}
+        <div className={`${isFirstSidebarOpen ? 'hidden md:flex' : 'hidden'} shrink-0 h-full transition-all duration-150`}>
           <ChatNavColumn
             conversations={conversations}
             activeConvId={activeConvId}
@@ -3047,6 +3054,47 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
                 <span>Drafts</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 11. MOBILE SLIDE-OVER NAVIGATION DRAWER (Closed by default, opened via hamburger menu) */}
+      {showMobileMenuDrawer && (
+        <div
+          className="md:hidden fixed inset-0 z-50 flex bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setShowMobileMenuDrawer(false)}
+        >
+          <div
+            className="w-72 max-w-[85vw] h-full bg-[var(--md-sys-color-surface-container-lowest)] shadow-2xl border-r border-[var(--md-sys-color-outline-variant)] animate-in slide-in-from-left duration-200 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ChatNavColumn
+              conversations={conversations}
+              activeConvId={activeConvId}
+              activeNavShortcut={activeNavShortcut}
+              onlineUserIds={onlineUserIds}
+              userPresenceMap={userPresenceMap}
+              onSelectShortcut={(s) => {
+                setActiveNavShortcut(s)
+                setShowMobileMenuDrawer(false)
+              }}
+              onSelectConversation={(id) => {
+                setActiveConvId(id)
+                setShowMobileMenuDrawer(false)
+              }}
+              onNewChat={() => {
+                setIsNewChatOpen(true)
+                setShowMobileMenuDrawer(false)
+              }}
+              onNewChannel={() => {
+                setIsNewChannelOpen(true)
+                setShowMobileMenuDrawer(false)
+              }}
+              onBrowseSpaces={() => {
+                setIsBrowseSpacesOpen(true)
+                setShowMobileMenuDrawer(false)
+              }}
+            />
           </div>
         </div>
       )}
