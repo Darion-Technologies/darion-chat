@@ -7,25 +7,12 @@
 export type HapticImpactStyle = 'light' | 'medium' | 'heavy' | 'selection' | 'success' | 'warning' | 'error'
 
 class RichHapticsEngine {
-  private isCapacitor = false
-  private capacitorHaptics: any = null
   private isEnabled = true
 
   constructor() {
     if (typeof window !== 'undefined') {
       const pref = localStorage.getItem('darion_haptics_enabled')
       this.isEnabled = pref === null ? true : pref === 'true'
-
-      // Check for Capacitor native environment
-      // @ts-ignore
-      if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) {
-        this.isCapacitor = true
-        import('@capacitor/haptics')
-          .then((mod) => {
-            this.capacitorHaptics = mod.Haptics
-          })
-          .catch(() => {})
-      }
     }
   }
 
@@ -53,29 +40,31 @@ class RichHapticsEngine {
     if (!this.isEnabled || typeof window === 'undefined') return
 
     // 1. Native Capacitor Haptics (iOS & Android)
-    if (this.capacitorHaptics) {
+    const cap = (window as any).Capacitor
+    const haptics = cap?.Plugins?.Haptics
+    if (haptics) {
       try {
         switch (style) {
           case 'light':
-            this.capacitorHaptics.impact({ style: 'LIGHT' })
+            haptics.impact({ style: 'LIGHT' })
             return
           case 'medium':
-            this.capacitorHaptics.impact({ style: 'MEDIUM' })
+            haptics.impact({ style: 'MEDIUM' })
             return
           case 'heavy':
-            this.capacitorHaptics.impact({ style: 'HEAVY' })
+            haptics.impact({ style: 'HEAVY' })
             return
           case 'selection':
-            this.capacitorHaptics.selectionChanged()
+            haptics.selectionChanged()
             return
           case 'success':
-            this.capacitorHaptics.notification({ type: 'SUCCESS' })
+            haptics.notification({ type: 'SUCCESS' })
             return
           case 'warning':
-            this.capacitorHaptics.notification({ type: 'WARNING' })
+            haptics.notification({ type: 'WARNING' })
             return
           case 'error':
-            this.capacitorHaptics.notification({ type: 'ERROR' })
+            haptics.notification({ type: 'ERROR' })
             return
         }
       } catch {
