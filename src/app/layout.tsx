@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     shortcut: '/icon.svg',
     apple: '/icon.svg',
   },
+  manifest: '/manifest.json',
 }
 
 export const viewport: Viewport = {

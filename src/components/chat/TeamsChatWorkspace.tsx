@@ -206,6 +206,52 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
 
   const activeConv = conversations.find((c) => c.id === activeConvId)
 
+  // Android Native Hardware Back Button Handler
+  useEffect(() => {
+    let unlisten: any = null
+    const setupBackButton = async () => {
+      try {
+        const { App } = await import('@capacitor/app')
+        const listener = await App.addListener('backButton', () => {
+          if (isSettingsOpen) {
+            setIsSettingsOpen(false)
+          } else if (isBrowseSpacesOpen) {
+            setIsBrowseSpacesOpen(false)
+          } else if (isCodeModalOpen) {
+            setIsCodeModalOpen(false)
+          } else if (isMobileMoreOpen) {
+            setIsMobileMoreOpen(false)
+          } else if (showMobileMenuDrawer) {
+            setShowMobileMenuDrawer(false)
+          } else if (activeThreadParent) {
+            setActiveThreadParent(null)
+          } else if (activeConvId) {
+            setActiveConvId('')
+          } else {
+            App.minimizeApp()
+          }
+        })
+        unlisten = listener
+      } catch {
+        // Fallback when running directly in browser
+      }
+    }
+    setupBackButton()
+    return () => {
+      if (unlisten && typeof unlisten.remove === 'function') {
+        unlisten.remove()
+      }
+    }
+  }, [
+    isSettingsOpen,
+    isBrowseSpacesOpen,
+    isCodeModalOpen,
+    isMobileMoreOpen,
+    showMobileMenuDrawer,
+    activeThreadParent,
+    activeConvId,
+  ])
+
   // Action Sheet Pull Down Handlers
   const handleActionSheetTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {

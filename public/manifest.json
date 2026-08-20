@@ -1,0 +1,20 @@
+{
+  "name": "Darion Chat",
+  "short_name": "Darion Chat",
+  "description": "Enterprise-grade Real-Time Teams Chat & Video Calling Suite",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#131314",
+  "theme_color": "#0B57D0",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "communication", "productivity"]
+}
