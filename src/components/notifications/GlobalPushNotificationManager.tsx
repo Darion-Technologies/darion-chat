@@ -13,8 +13,10 @@ import {
   Clock,
   Palmtree,
   X,
+  Sparkles,
 } from 'lucide-react'
 import { soundEffects } from '@/lib/utils/soundEffects'
+import { richHaptics } from '@/lib/utils/richHaptics'
 
 interface ToastNotification extends NotificationItem {
   toastId: string
@@ -72,13 +74,15 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
 
   const triggerNotification = useCallback(
     (notif: NotificationItem) => {
-      // 1. Play high-fidelity sound effect if enabled
+      // 1. Play high-fidelity Apple-inspired sound and haptic pulse
       if (soundEnabled) {
         if (notif.type === 'meet_started') {
           soundEffects.playMeetingAlertSound()
         } else {
           soundEffects.playNotificationSound()
         }
+      } else {
+        richHaptics.success()
       }
 
       // 2. Spawn in-app floating toast
@@ -87,18 +91,19 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
 
       setToasts((prev) => [newToast, ...prev.slice(0, 3)]) // keep max 4 toasts on screen
 
-      // Auto dismiss: 4.5s for chat messages (it disappears as soon as you see it), 6.5s for others
+      // Auto dismiss: 4.5s for chat messages, 6.5s for others
       const dismissDuration = notif.type === 'chat_message' ? 4500 : 6500
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.toastId !== toastId))
       }, dismissDuration)
 
-      // 3. Trigger native OS desktop push notification if granted
+      // 3. Trigger Real Native OS Push Notification
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         try {
-          const browserNotif = new Notification(notif.title, {
+          const browserNotif = new Notification(notif.title || 'Darion Chat', {
             body: notif.message,
-            icon: '/favicon.ico',
+            icon: '/icon.svg',
+            badge: '/icon.svg',
             tag: notif.id || notif.type,
           })
 
@@ -110,7 +115,7 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
             browserNotif.close()
           }
         } catch {
-          // Native push notification failed
+          // Native push fallback
         }
       }
     },

@@ -1,3 +1,5 @@
+import { richHaptics } from './richHaptics'
+
 /**
  * High-fidelity Enterprise Audio Sound Effects Engine
  * Built using Web Audio API (Zero external assets required, zero latency, ultra-lightweight)
@@ -70,9 +72,10 @@ class SoundEffectsEngine {
   }
 
   /**
-   * Crisp, modern "Message Sent" pop/swoosh (like Apple iMessage & Telegram)
+   * Crisp, modern "Message Sent" pop/swoosh (Apple iMessage & Telegram inspired)
    */
   public playMessageSentSound(): void {
+    richHaptics.impact('light')
     if (!this.isSoundEnabled()) return
     const ctx = this.getContext()
     if (!ctx) return
@@ -121,6 +124,7 @@ class SoundEffectsEngine {
    * Pleasant, crystal-clear Incoming Notification chime (Apple / Slack style chord)
    */
   public playNotificationSound(): void {
+    richHaptics.success()
     if (!this.isSoundEnabled()) return
     const ctx = this.getContext()
     if (!ctx) return
@@ -167,6 +171,43 @@ class SoundEffectsEngine {
     } catch {
       // Ignored
     }
+  }
+
+  /**
+   * Crisp micro-acoustic reaction pop/ping (like Apple iMessage emoji heart/tap)
+   */
+  public playReactionSound(): void {
+    richHaptics.impact('light')
+    if (!this.isSoundEnabled()) return
+    const ctx = this.getContext()
+    if (!ctx) return
+
+    try {
+      this.unlockAudio()
+      const now = ctx.currentTime
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(950, now)
+      osc.frequency.exponentialRampToValueAtTime(1400, now + 0.05)
+
+      gain.gain.setValueAtTime(0.1, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      osc.start(now)
+      osc.stop(now + 0.06)
+    } catch {}
+  }
+
+  /**
+   * Tactile micro-tap sound for buttons and navigation items
+   */
+  public playTapSound(): void {
+    richHaptics.selection()
   }
 
   /**

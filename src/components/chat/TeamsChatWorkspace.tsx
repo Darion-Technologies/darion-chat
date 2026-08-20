@@ -68,6 +68,7 @@ import { EmojiAndGifPicker } from './EmojiAndGifPicker'
 import { ImagePreviewModal } from './ImagePreviewModal'
 import { VoiceNotePlayer } from './VoiceNotePlayer'
 import { soundEffects } from '@/lib/utils/soundEffects'
+import { richHaptics } from '@/lib/utils/richHaptics'
 import { MiniSidebarRail, ChatNavTab } from '@/components/navigation/MiniSidebarRail'
 import { MeetingsPanel } from './MeetingsPanel'
 import { CalendarPanel } from './CalendarPanel'
@@ -733,12 +734,27 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
     }
   }, [activeConvId, broadcastConversationRead])
 
-  // Refresh messages helper (with Smart Scrolling that doesn't displace user if scrolled up)
+  // Refresh messages helper (0ms Optimistic UI Reconciliation + Smart Scrolling)
   const refreshMessages = useCallback(async (playIncomingSound = false) => {
     if (!activeConvId) return
     try {
       const freshMessages = await getConversationMessagesAction(activeConvId)
-      setMessages(freshMessages)
+
+      // Reconcile and preserve pending optimistic messages (temp-...) that have not landed in DB yet
+      setMessages((prev) => {
+        const pendingOptimistic = prev.filter(
+          (m) =>
+            m.id.startsWith('temp-') &&
+            !freshMessages.some(
+              (f) =>
+                f.id === m.id ||
+                (f.senderId === m.senderId &&
+                  f.content === m.content &&
+                  Math.abs(new Date(f.createdAt).getTime() - new Date(m.createdAt).getTime()) < 20000)
+            )
+        )
+        return [...freshMessages, ...pendingOptimistic]
+      })
 
       if (playIncomingSound) {
         soundEffects.playNotificationSound()
