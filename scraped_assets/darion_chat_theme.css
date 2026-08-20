@@ -1,0 +1,52 @@
+/**
+ * Darion Chats - Rebranded Material Design 3 (MD3) Design System
+ * Scraped & Synthesized from Google Chat Web Layout
+ */
+
+:root {
+  /* Primary Emerald Brand Theme */
+  --md-sys-color-primary: #059669;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: #D1FAE5;
+  --md-sys-color-on-primary-container: #064E3B;
+
+  /* Surfaces & Containers */
+  --md-sys-color-surface: #F8FAFC;
+  --md-sys-color-on-surface: #0F172A;
+  --md-sys-color-surface-container: #F1F5F9;
+  --md-sys-color-surface-container-high: #E2E8F0;
+  --md-sys-color-surface-container-highest: #CBD5E1;
+  --md-sys-color-surface-container-low: #F8FAFC;
+  --md-sys-color-surface-container-lowest: #FFFFFF;
+  --md-sys-color-outline: #94A3B8;
+  --md-sys-color-outline-variant: #E2E8F0;
+  --md-sys-color-on-surface-variant: #64748B;
+
+  /* Layout Dimensions */
+  --gc-header-height: 56px;
+  --gc-sidebar-width: 256px;
+  --gc-homefeed-width: 320px;
+  --gc-threaddrawer-width: 420px;
+  --gc-companionrail-width: 48px;
+
+  /* Typography */
+  --font-google-sans: 'Google Sans', 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.dark {
+  --md-sys-color-primary: #34D399;
+  --md-sys-color-on-primary: #064E3B;
+  --md-sys-color-primary-container: #065F46;
+  --md-sys-color-on-primary-container: #D1FAE5;
+
+  --md-sys-color-surface: #0B0F17;
+  --md-sys-color-on-surface: #F1F5F9;
+  --md-sys-color-surface-container: #111827;
+  --md-sys-color-surface-container-high: #1E293B;
+  --md-sys-color-surface-container-highest: #334155;
+  --md-sys-color-surface-container-low: #0F172A;
+  --md-sys-color-surface-container-lowest: #070A10;
+  --md-sys-color-outline: #64748B;
+  --md-sys-color-outline-variant: #334155;
+  --md-sys-color-on-surface-variant: #94A3B8;
+}

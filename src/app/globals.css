@@ -1,0 +1,245 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Google Material Design 3 / MNC Enterprise Theme Tokens */
+    --md-sys-color-primary: #0B57D0;
+    --md-sys-color-on-primary: #FFFFFF;
+    --md-sys-color-primary-container: #E0EDFF;
+    --md-sys-color-on-primary-container: #041E49;
+    
+    --md-sys-color-secondary: #4F46E5;
+    --md-sys-color-on-secondary: #FFFFFF;
+    --md-sys-color-secondary-container: #EEF2FF;
+    --md-sys-color-on-secondary-container: #1E1B4B;
+
+    --md-sys-color-tertiary: #0284C7;
+    --md-sys-color-on-tertiary: #FFFFFF;
+    --md-sys-color-tertiary-container: #E0F2FE;
+    --md-sys-color-on-tertiary-container: #082F49;
+    
+    /* Surfaces: Slate 50 Canvas with Crisp Pure White Cards */
+    --md-sys-color-surface: #F8FAFC;
+    --md-sys-color-surface-dim: #E2E8F0;
+    --md-sys-color-surface-bright: #FFFFFF;
+    --md-sys-color-surface-container-lowest: #FFFFFF;
+    --md-sys-color-surface-container-low: #F1F5F9;
+    --md-sys-color-surface-container: #FFFFFF;
+    --md-sys-color-surface-container-high: #F1F5F9;
+    --md-sys-color-surface-container-highest: #E2E8F0;
+    
+    /* Text & Outlines */
+    --md-sys-color-on-surface: #0F172A;
+    --md-sys-color-on-surface-variant: #475569;
+    --md-sys-color-outline: #94A3B8;
+    --md-sys-color-outline-variant: #E2E8F0;
+    --md-sys-color-disabled: #94A3B8;
+
+    /* Semantics (WCAG AAA High Contrast) */
+    --md-sys-color-error: #DC2626;
+    --md-sys-color-on-error: #FFFFFF;
+    --md-sys-color-error-container: #FEF2F2;
+    --md-sys-color-on-error-container: #7F1D1D;
+
+    --md-sys-color-success: #059669;
+    --md-sys-color-on-success: #FFFFFF;
+    --md-sys-color-success-container: #ECFDF5;
+    --md-sys-color-on-success-container: #064E3B;
+
+    --md-sys-color-warning: #D97706;
+    --md-sys-color-on-warning: #FFFFFF;
+    --md-sys-color-warning-container: #FFFBEB;
+    --md-sys-color-on-warning-container: #78350F;
+
+    /* MD3 Shapes */
+    --md-sys-shape-corner-none: 0px;
+    --md-sys-shape-corner-extra-small: 4px;
+    --md-sys-shape-corner-small: 8px;
+    --md-sys-shape-corner-medium: 12px;
+    --md-sys-shape-corner-large: 16px;
+    --md-sys-shape-corner-extra-large: 24px;
+    --md-sys-shape-corner-full: 9999px;
+
+    /* Elevation Shadows (Ambient Soft Depth) */
+    --md-sys-elevation-1: 0px 1px 2px 0px rgba(15, 23, 42, 0.04), 0px 1px 3px 1px rgba(15, 23, 42, 0.05);
+    --md-sys-elevation-2: 0px 2px 4px 0px rgba(15, 23, 42, 0.05), 0px 2px 6px 2px rgba(15, 23, 42, 0.06);
+    --md-sys-elevation-3: 0px 4px 8px 0px rgba(15, 23, 42, 0.06), 0px 4px 12px 3px rgba(15, 23, 42, 0.08);
+
+    /* Safe Area Defaults */
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Dark Theme Tokens: Deep Obsidian Navy Canvas */
+      --md-sys-color-primary: #8AB4F8;
+      --md-sys-color-on-primary: #041E49;
+      --md-sys-color-primary-container: #004A77;
+      --md-sys-color-on-primary-container: #D3E3FD;
+      
+      --md-sys-color-secondary: #818CF8;
+      --md-sys-color-on-secondary: #1E1B4B;
+      --md-sys-color-secondary-container: #2E2875;
+      --md-sys-color-on-secondary-container: #E0E7FF;
+
+      --md-sys-color-tertiary: #38BDF8;
+      --md-sys-color-on-tertiary: #082F49;
+      --md-sys-color-tertiary-container: #075985;
+      --md-sys-color-on-tertiary-container: #E0F2FE;
+      
+      /* Surfaces */
+      --md-sys-color-surface: #0B0F19;
+      --md-sys-color-surface-dim: #0B0F19;
+      --md-sys-color-surface-bright: #1E293B;
+      --md-sys-color-surface-container-lowest: #070A10;
+      --md-sys-color-surface-container-low: #111726;
+      --md-sys-color-surface-container: #131B2E;
+      --md-sys-color-surface-container-high: #1E293B;
+      --md-sys-color-surface-container-highest: #293548;
+      
+      /* Text & Outlines */
+      --md-sys-color-on-surface: #F8FAFC;
+      --md-sys-color-on-surface-variant: #94A3B8;
+      --md-sys-color-outline: #64748B;
+      --md-sys-color-outline-variant: rgba(255, 255, 255, 0.08);
+      --md-sys-color-disabled: #64748B;
+
+      /* Semantics */
+      --md-sys-color-error: #F87171;
+      --md-sys-color-on-error: #450A0A;
+      --md-sys-color-error-container: #7F1D1D;
+      --md-sys-color-on-error-container: #FEE2E2;
+
+      --md-sys-color-success: #34D399;
+      --md-sys-color-on-success: #022C22;
+      --md-sys-color-success-container: #064E3B;
+      --md-sys-color-on-success-container: #D1FAE5;
+
+      --md-sys-color-warning: #FBBF24;
+      --md-sys-color-on-warning: #451A03;
+      --md-sys-color-warning-container: #78350F;
+      --md-sys-color-on-warning-container: #FEF3C7;
+
+      --md-sys-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.35), 0px 1px 2px 0px rgba(0, 0, 0, 0.50);
+      --md-sys-elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.35), 0px 1px 2px 0px rgba(0, 0, 0, 0.50);
+      --md-sys-elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.35), 0px 1px 3px 0px rgba(0, 0, 0, 0.50);
+    }
+  }
+
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Google Sans', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+}
+
+/* Mobile Safe Area & Density Helpers */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+}
+
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 8px);
+}
+
+.min-h-screen-safe {
+  min-height: 100dvh;
+}
+
+.h-screen-safe {
+  height: 100dvh;
+}
+
+/* Custom modern thin scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 0px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* Hide scrollbar for clean horizontal tab strips */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Bottom Sheet Animations */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  aside, header, nav, button:not(.print-keep), form, .print\:hidden {
+    display: none !important;
+  }
+  .print\:block {
+    display: block !important;
+  }
+  main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  th, td {
+    border: 1px solid #c4c7c5 !important;
+    padding: 6px 8px !important;
+  }
+}
