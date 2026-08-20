@@ -248,7 +248,7 @@ export const GoogleChatComposer: React.FC<GoogleChatComposerProps> = ({
   }
 
   return (
-    <div className="p-3 sm:p-4 bg-[var(--md-sys-color-surface-container-lowest)] border-t border-[var(--md-sys-color-outline-variant)] relative shrink-0">
+    <div className="p-3 sm:p-4 pb-[calc(0.75rem+max(env(safe-area-inset-bottom,0px),0px))] bg-[var(--md-sys-color-surface-container-lowest)] border-t border-[var(--md-sys-color-outline-variant)] relative shrink-0">
       {/* 1. SLASH COMMANDS POPUP */}
       {slashMenuOpen && (
         <div className="absolute bottom-full left-4 mb-2 w-72 rounded-2xl bg-[var(--md-sys-color-surface-container-highest)] border border-[var(--md-sys-color-outline-variant)] shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">

@@ -2,6 +2,12 @@
 
 @layer base {
   :root {
+    /* Safe Area Insets */
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+
     /* Google Material Design 3 / MNC Enterprise Theme Tokens */
     --md-sys-color-primary: #0B57D0;
     --md-sys-color-on-primary: #FFFFFF;

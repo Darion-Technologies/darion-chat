@@ -119,8 +119,9 @@ export const GoogleChatHeader: React.FC<GoogleChatHeaderProps> = ({
   ]
 
   return (
-    <header className="h-14 w-full bg-[var(--md-sys-color-surface-container-lowest)] border-b border-[var(--md-sys-color-outline-variant)] px-3 sm:px-4 flex items-center justify-between gap-2 sm:gap-4 shrink-0 z-40 select-none">
-      {/* 1. LEFT BRANDING */}
+    <header className="w-full bg-[var(--md-sys-color-surface-container-lowest)] border-b border-[var(--md-sys-color-outline-variant)] px-3 sm:px-4 pt-[max(env(safe-area-inset-top,0px),0px)] flex flex-col justify-center min-h-[calc(3.5rem+max(env(safe-area-inset-top,0px),0px))] shrink-0 z-40 select-none">
+      <div className="h-14 w-full flex items-center justify-between gap-2 sm:gap-4">
+        {/* 1. LEFT BRANDING */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <button
           type="button"

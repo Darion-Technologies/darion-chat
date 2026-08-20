@@ -1775,28 +1775,30 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
   return (
     <div className="flex flex-col h-full w-full overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)] text-[var(--md-sys-color-on-surface)] relative font-sans">
       {/* 1. TOP GOOGLE CHAT APP HEADER BAR */}
-      <GoogleChatHeader
-        currentUserId={currentUserId}
-        currentUserName={currentUserName}
-        currentUserRole={currentUserRole}
-        currentUserAvatar={currentUserAvatar}
-        searchQuery={convSearch}
-        onSearchChange={setConvSearch}
-        currentPresenceStatus={currentUserPresenceStatus}
-        statusMessage={currentStatusMessage}
-        onStatusChange={(newSt) => {
-          isManuallySetRef.current = newSt
-          trackPresenceState(newSt, newSt === 'dnd' ? 'Do not disturb' : '')
-        }}
-        onToggleSidebar={() => {
-          if (typeof window !== 'undefined' && window.innerWidth < 768) {
-            setShowMobileMenuDrawer((prev) => !prev)
-          } else {
-            setIsFirstSidebarOpen((prev) => !prev)
-          }
-        }}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-      />
+      <div className={activeConvId ? 'hidden md:block w-full shrink-0' : 'w-full shrink-0'}>
+        <GoogleChatHeader
+          currentUserId={currentUserId}
+          currentUserName={currentUserName}
+          currentUserRole={currentUserRole}
+          currentUserAvatar={currentUserAvatar}
+          searchQuery={convSearch}
+          onSearchChange={setConvSearch}
+          currentPresenceStatus={currentUserPresenceStatus}
+          statusMessage={currentStatusMessage}
+          onStatusChange={(newSt) => {
+            isManuallySetRef.current = newSt
+            trackPresenceState(newSt, newSt === 'dnd' ? 'Do not disturb' : '')
+          }}
+          onToggleSidebar={() => {
+            if (typeof window !== 'undefined' && window.innerWidth < 768) {
+              setShowMobileMenuDrawer((prev) => !prev)
+            } else {
+              setIsFirstSidebarOpen((prev) => !prev)
+            }
+          }}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+        />
+      </div>
 
       {/* 2. MAIN 3-PANE + COMPANION RAIL BODY */}
       <div className="flex-1 flex min-h-0 w-full overflow-hidden relative">
@@ -1861,90 +1863,92 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
             <div className="flex-1 flex min-w-0 h-full overflow-hidden relative">
               {/* 2. MAIN ACTIVE CHAT STREAM */}
               <main className="flex-1 flex flex-col min-w-0 h-full max-h-full overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)] relative">
-        {/* Chat Top Header (Pinned & Fixed - Screenshot 2) */}
-        <header className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)]/95 backdrop-blur-md flex items-center justify-between gap-3 shrink-0 sticky top-0 z-20">
-          <div className="flex items-center gap-2 sm:gap-3 truncate min-w-0 flex-1">
-            {/* Clean Mobile Back Button */}
-            <button
-              onClick={() => setActiveConvId('')}
-              className="md:hidden p-1.5 -ml-1.5 rounded-full text-[var(--md-sys-color-on-surface)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all shrink-0 cursor-pointer"
-              title="Back to conversations"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+        {/* Chat Top Header (Pinned & Fixed with Safe-Area Headroom) */}
+        <header className="w-full px-3 sm:px-4 pt-[max(env(safe-area-inset-top,0px),0px)] border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)]/95 backdrop-blur-md shrink-0 sticky top-0 z-20 select-none">
+          <div className="h-14 w-full flex items-center justify-between gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 truncate min-w-0 flex-1">
+              {/* Clean Mobile Back Button */}
+              <button
+                onClick={() => setActiveConvId('')}
+                className="md:hidden p-2 -ml-1 rounded-full text-[var(--md-sys-color-on-surface)] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all shrink-0 cursor-pointer"
+                title="Back to conversations"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
 
-            <div className="flex items-center gap-2.5 min-w-0 truncate">
-              {activeConv?.type === 'channel' ? (
-                <div className="w-8 h-8 rounded-xl bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] flex items-center justify-center flex-shrink-0 border border-[var(--md-sys-color-outline-variant)]">
-                  <Hash className="w-4 h-4" />
-                </div>
-              ) : (
-                <div className="relative flex-shrink-0">
-                  {activeConv?.avatarUrl ? (
-                    <img src={activeConv.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover border border-[var(--md-sys-color-outline-variant)]" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] border border-[var(--md-sys-color-outline-variant)] flex items-center justify-center font-bold text-xs">
-                      {activeConv?.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+              <div className="flex items-center gap-2.5 min-w-0 truncate">
+                {activeConv?.type === 'channel' ? (
+                  <div className="w-8 h-8 rounded-xl bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] flex items-center justify-center flex-shrink-0 border border-[var(--md-sys-color-outline-variant)]">
+                    <Hash className="w-4 h-4" />
+                  </div>
+                ) : (
+                  <div className="relative flex-shrink-0">
+                    {activeConv?.avatarUrl ? (
+                      <img src={activeConv.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover border border-[var(--md-sys-color-outline-variant)]" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] border border-[var(--md-sys-color-outline-variant)] flex items-center justify-center font-bold text-xs">
+                        {activeConv?.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
 
-                  {/* Header Real-time Presence Dot */}
-                  {(() => {
-                    const participantId = activeConv?.otherParticipant?.userId
-                    const isOnline = participantId ? onlineUserIds.has(participantId) : activeConv?.otherParticipant?.presenceStatus === 'online'
-                    const pStatus = (participantId && userPresenceMap[participantId]?.status) || (isOnline ? 'online' : 'offline')
-                    if (pStatus === 'dnd') {
-                      return (
-                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[var(--md-sys-color-surface-container)] flex items-center justify-center shadow-xs" title="In a meeting / Do not disturb">
-                          <span className="w-1 h-0.5 bg-white rounded-full" />
-                        </span>
-                      )
-                    }
-                    if (pStatus === 'away') {
-                      return <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-[var(--md-sys-color-surface-container)]" title="Away" />
-                    }
-                    if (isOnline) {
-                      return <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#00AC47] ring-2 ring-[var(--md-sys-color-surface-container)] shadow-2xs" title="Active now" />
-                    }
-                    return null
-                  })()}
+                    {/* Header Real-time Presence Dot */}
+                    {(() => {
+                      const participantId = activeConv?.otherParticipant?.userId
+                      const isOnline = participantId ? onlineUserIds.has(participantId) : activeConv?.otherParticipant?.presenceStatus === 'online'
+                      const pStatus = (participantId && userPresenceMap[participantId]?.status) || (isOnline ? 'online' : 'offline')
+                      if (pStatus === 'dnd') {
+                        return (
+                          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[var(--md-sys-color-surface-container)] flex items-center justify-center shadow-xs" title="In a meeting / Do not disturb">
+                            <span className="w-1 h-0.5 bg-white rounded-full" />
+                          </span>
+                        )
+                      }
+                      if (pStatus === 'away') {
+                        return <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-[var(--md-sys-color-surface-container)]" title="Away" />
+                      }
+                      if (isOnline) {
+                        return <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#00AC47] ring-2 ring-[var(--md-sys-color-surface-container)] shadow-2xs" title="Active now" />
+                      }
+                      return null
+                    })()}
+                  </div>
+                )}
+                <div className="truncate min-w-0">
+                  <h3 className="text-sm font-bold text-[var(--md-sys-color-on-surface)] flex items-center gap-2 truncate">
+                    <span>{activeConv?.name || 'Select Conversation'}</span>
+                  </h3>
                 </div>
-              )}
-              <div className="truncate min-w-0">
-                <h3 className="text-sm font-bold text-[var(--md-sys-color-on-surface)] flex items-center gap-2 truncate">
-                  <span>{activeConv?.name || 'Select Conversation'}</span>
-                </h3>
               </div>
             </div>
-          </div>
 
-          {/* Action Bar (Phone, Video, More) */}
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <button
-              onClick={() => handleStartCall('audio')}
-              disabled={startingMeet}
-              title="Start Voice Call"
-              className="p-2 rounded-full text-[var(--md-sys-color-on-surface)] hover:bg-[var(--md-sys-color-surface-container-high)] transition-all cursor-pointer disabled:opacity-50"
-            >
-              <Phone className="w-5 h-5" />
-            </button>
+            {/* Action Bar (Phone, Video, More) */}
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+              <button
+                onClick={() => handleStartCall('audio')}
+                disabled={startingMeet}
+                title="Start Voice Call"
+                className="p-2 rounded-full text-[var(--md-sys-color-on-surface)] hover:bg-[var(--md-sys-color-surface-container-high)] transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Phone className="w-5 h-5" />
+              </button>
 
-            <button
-              onClick={() => handleStartCall('video')}
-              disabled={startingMeet}
-              title="Start Video Call"
-              className="p-2 rounded-full text-[var(--md-sys-color-on-surface)] hover:bg-[var(--md-sys-color-surface-container-high)] transition-all cursor-pointer disabled:opacity-50"
-            >
-              <Video className="w-5 h-5" />
-            </button>
+              <button
+                onClick={() => handleStartCall('video')}
+                disabled={startingMeet}
+                title="Start Video Call"
+                className="p-2 rounded-full text-[var(--md-sys-color-on-surface)] hover:bg-[var(--md-sys-color-surface-container-high)] transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Video className="w-5 h-5" />
+              </button>
 
-            <button
-              type="button"
-              className="p-2 rounded-full text-[var(--md-sys-color-on-surface)] hover:bg-[var(--md-sys-color-surface-container-high)] transition-all cursor-pointer"
-              title="More options"
-            >
-              <MoreVertical className="w-5 h-5" />
-            </button>
+              <button
+                type="button"
+                className="p-2 rounded-full text-[var(--md-sys-color-on-surface)] hover:bg-[var(--md-sys-color-surface-container-high)] transition-all cursor-pointer"
+                title="More options"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </header>
 
@@ -2969,7 +2973,7 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
       )}
       {/* 9. MOBILE FLOATING BOTTOM NAVIGATION BAR & FAB (Screenshots 1, 3, 4) */}
       {!activeConvId && (
-        <div className="md:hidden fixed bottom-5 inset-x-0 z-40 px-4 flex items-center justify-between pointer-events-none select-none">
+        <div className="md:hidden fixed bottom-[calc(1.25rem+max(env(safe-area-inset-bottom,0px),0px))] inset-x-0 z-40 px-4 flex items-center justify-between pointer-events-none select-none">
           {/* Floating Pill Nav Bar */}
           <div className="pointer-events-auto bg-[var(--md-sys-color-surface-container-highest)]/95 dark:bg-slate-900/95 backdrop-blur-xl border border-[var(--md-sys-color-outline-variant)] shadow-2xl rounded-full px-2 py-1.5 flex items-center gap-1.5">
             {/* Tab 1: Home */}
@@ -3058,7 +3062,7 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
           onClick={() => setIsMobileMoreOpen(false)}
         >
           <div
-            className="bg-[var(--md-sys-color-surface-container-lowest)] dark:bg-slate-900 rounded-t-3xl p-5 pb-8 shadow-2xl border-t border-[var(--md-sys-color-outline-variant)] animate-in slide-in-from-bottom duration-200"
+            className="bg-[var(--md-sys-color-surface-container-lowest)] dark:bg-slate-900 rounded-t-3xl p-5 pb-[calc(2rem+max(env(safe-area-inset-bottom,0px),0px))] shadow-2xl border-t border-[var(--md-sys-color-outline-variant)] animate-in slide-in-from-bottom duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drag pill handle */}
@@ -3111,7 +3115,7 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
           onClick={() => setShowMobileMenuDrawer(false)}
         >
           <div
-            className="w-72 max-w-[85vw] h-full bg-[var(--md-sys-color-surface-container-lowest)] shadow-2xl border-r border-[var(--md-sys-color-outline-variant)] animate-in slide-in-from-left duration-200 flex flex-col"
+            className="w-72 max-w-[85vw] h-full bg-[var(--md-sys-color-surface-container-lowest)] shadow-2xl border-r border-[var(--md-sys-color-outline-variant)] pt-[max(env(safe-area-inset-top,0px),0px)] pb-[max(env(safe-area-inset-bottom,0px),0px)] animate-in slide-in-from-left duration-200 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <ChatNavColumn
