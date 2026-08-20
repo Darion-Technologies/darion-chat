@@ -211,8 +211,12 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
     let unlisten: any = null
     const setupBackButton = async () => {
       try {
-        const { App } = await import('@capacitor/app')
-        const listener = await App.addListener('backButton', () => {
+        // Dynamic import with fallback for browser / SSR
+        // @ts-ignore
+        const cap = await import('@capacitor/app').catch(() => null)
+        if (!cap || !cap.App) return
+
+        const listener = await cap.App.addListener('backButton', () => {
           if (isSettingsOpen) {
             setIsSettingsOpen(false)
           } else if (isBrowseSpacesOpen) {
@@ -228,7 +232,7 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
           } else if (activeConvId) {
             setActiveConvId('')
           } else {
-            App.minimizeApp()
+            cap.App.minimizeApp()
           }
         })
         unlisten = listener

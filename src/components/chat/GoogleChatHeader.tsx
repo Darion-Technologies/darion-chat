@@ -467,6 +467,7 @@ export const GoogleChatHeader: React.FC<GoogleChatHeaderProps> = ({
           )}
         </div>
       </div>
-    </header>
+    </div>
+  </header>
   )
 }
