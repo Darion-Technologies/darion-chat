@@ -72,6 +72,31 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
     })
   }, [userId])
 
+  // Initialize Android Native Notification Channels
+  useEffect(() => {
+    try {
+      const cap = (window as any).Capacitor
+      const localNotif = cap?.Plugins?.LocalNotifications
+      if (localNotif) {
+        localNotif.createChannel({
+          id: 'darion_chat_high_priority',
+          name: 'Chat & Meeting Notifications',
+          description: 'High-priority heads-up push notifications with sound and vibration',
+          importance: 5,
+          visibility: 1,
+          vibration: true,
+        }).catch(() => {})
+
+        localNotif.addListener('localNotificationActionPerformed', (notification: any) => {
+          const link = notification?.notification?.extra?.link
+          if (link) {
+            router.push(link)
+          }
+        })
+      }
+    } catch {}
+  }, [router])
+
   const triggerNotification = useCallback(
     (notif: NotificationItem) => {
       // 1. Play high-fidelity Apple-inspired sound and haptic pulse
@@ -97,7 +122,27 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
         setToasts((prev) => prev.filter((t) => t.toastId !== toastId))
       }, dismissDuration)
 
-      // 3. Trigger Real Native OS Push Notification
+      // 3. Trigger Native Capacitor / Android Push Notification (Heads-up banner + sound)
+      try {
+        const cap = (window as any).Capacitor
+        const localNotif = cap?.Plugins?.LocalNotifications
+        if (localNotif) {
+          localNotif.schedule({
+            notifications: [
+              {
+                title: notif.title || 'Darion Chat',
+                body: notif.message,
+                id: Math.floor(Math.random() * 1000000),
+                channelId: 'darion_chat_high_priority',
+                extra: { link: notif.link },
+                schedule: { at: new Date(Date.now() + 50) },
+              },
+            ],
+          }).catch(() => {})
+        }
+      } catch {}
+
+      // 4. Trigger Real Native OS Web Push Notification
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         try {
           const browserNotif = new Notification(notif.title || 'Darion Chat', {
@@ -215,8 +260,24 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
     }
   }, [currentUserId, triggerNotification])
 
-  // Request browser notification permission
+  // Request browser & Android native notification permission
   const handleRequestPermission = async () => {
+    // 1. Android Capacitor Native Permission
+    try {
+      const cap = (window as any).Capacitor
+      const localNotif = cap?.Plugins?.LocalNotifications
+      if (localNotif) {
+        const perm = await localNotif.requestPermissions()
+        if (perm.display === 'granted') {
+          setPermissionState('granted')
+          setShowPermissionBanner(false)
+          soundEffects.playNotificationSound()
+          return
+        }
+      }
+    } catch {}
+
+    // 2. Web Browser Notification Permission
     if (typeof window === 'undefined' || !('Notification' in window)) return
     try {
       const result = await Notification.requestPermission()
@@ -226,7 +287,7 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
         soundEffects.playNotificationSound()
         new Notification('🔔 Notifications Enabled!', {
           body: 'You will receive real-time push alerts for messages, shifts, video meetings, and payments.',
-          icon: '/favicon.ico',
+          icon: '/icon.svg',
         })
       }
     } catch {
