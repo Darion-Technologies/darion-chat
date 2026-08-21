@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useDirectWebRTC } from '@/lib/hooks/useDirectWebRTC'
 import { richHaptics } from '@/lib/utils/richHaptics'
+import { NativeCall } from '@/lib/utils/nativeCallBridge'
 
 interface DirectCallModalProps {
   callId: string
@@ -221,7 +222,9 @@ export const DirectCallModal: React.FC<DirectCallModalProps> = ({
             type="button"
             onClick={() => {
               richHaptics.impact('light')
-              setIsSpeakerOn(!isSpeakerOn)
+              const next = !isSpeakerOn
+              setIsSpeakerOn(next)
+              NativeCall.setSpeakerphone(next)
             }}
             className={`p-3.5 sm:p-4 rounded-full transition-all active:scale-95 cursor-pointer ${
               isSpeakerOn

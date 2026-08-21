@@ -14,6 +14,7 @@ import {
 import { DirectCallModal } from './DirectCallModal'
 import { FloatingCallBubble } from './FloatingCallBubble'
 import { richHaptics } from '@/lib/utils/richHaptics'
+import { NativeCall } from '@/lib/utils/nativeCallBridge'
 
 interface GlobalCallManagerProps {
   currentUserId?: string
@@ -115,7 +116,14 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
     soundEffects.startRingingIncoming()
     richHaptics.impact('heavy')
 
-    // Trigger Native / Browser Heads-Up Notification if backgrounded
+    // 1. Trigger Native Android Full-Screen Calling Activity over Lock Screen & Native Ringtone
+    NativeCall.showIncomingCall({
+      callerName: incoming.callerName,
+      roomCode: incoming.roomCode,
+      callType: incoming.callType,
+    })
+
+    // 2. Trigger Native / Browser Heads-Up Notification if backgrounded
     try {
       const cap = (window as any).Capacitor
       const localNotif = cap?.Plugins?.LocalNotifications
@@ -327,6 +335,7 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
   const handleAcceptIncoming = async () => {
     if (!incomingCall) return
     soundEffects.stopRinging()
+    NativeCall.stopRingtone()
     if (incomingTimeoutRef.current) clearTimeout(incomingTimeoutRef.current)
 
     const meetUrl = incomingCall.meetUrl
@@ -368,6 +377,7 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
   const handleDeclineIncoming = async (reason: 'decline' | 'missed' = 'decline') => {
     if (!incomingCall) return
     soundEffects.playCallEndedSound()
+    NativeCall.stopRingtone()
     if (incomingTimeoutRef.current) clearTimeout(incomingTimeoutRef.current)
 
     const cur = incomingCall
@@ -392,6 +402,7 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
   // Handle Cancel Outgoing Call (Caller hangs up)
   const handleCancelOutgoing = () => {
     soundEffects.playCallEndedSound()
+    NativeCall.stopRingtone()
     if (outgoingTimeoutRef.current) clearTimeout(outgoingTimeoutRef.current)
     if (outgoingIntervalRef.current) clearInterval(outgoingIntervalRef.current)
 
