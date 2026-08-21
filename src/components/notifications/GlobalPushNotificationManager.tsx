@@ -34,7 +34,7 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
       if (!sub && VAPID_PUBLIC_KEY) {
         sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as unknown as BufferSource,
         })
       }
       if (sub) {
