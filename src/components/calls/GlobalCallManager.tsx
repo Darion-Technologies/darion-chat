@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { DirectCallModal } from './DirectCallModal'
 import { FloatingCallBubble } from './FloatingCallBubble'
+import { richHaptics } from '@/lib/utils/richHaptics'
 
 interface GlobalCallManagerProps {
   currentUserId?: string
