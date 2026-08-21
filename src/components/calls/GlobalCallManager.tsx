@@ -54,15 +54,39 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
     outgoingCallRef.current = outgoingCall
   }, [outgoingCall])
 
-  // Resolve user id
+  // Resolve user id with zero-latency localStorage cache fallback
   useEffect(() => {
     if (currentUserId) {
       setResolvedUserId(currentUserId)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('darion_cached_user_id', currentUserId)
+      }
       return
     }
+
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('darion_cached_user_id')
+      if (cached) setResolvedUserId(cached)
+
+      try {
+        const keys = Object.keys(localStorage)
+        const sbKey = keys.find((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+        if (sbKey) {
+          const parsed = JSON.parse(localStorage.getItem(sbKey) || '{}')
+          const uid = parsed?.user?.id || parsed?.id
+          if (uid) setResolvedUserId(uid)
+        }
+      } catch {}
+    }
+
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.id) setResolvedUserId(data.user.id)
+      if (data.user?.id) {
+        setResolvedUserId(data.user.id)
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('darion_cached_user_id', data.user.id)
+        }
+      }
     })
   }, [currentUserId])
 
@@ -193,12 +217,13 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
 
     broadcastChannel
       .on('broadcast', { event: 'incoming_call' }, ({ payload }) => {
-        if (!payload || !resolvedUserId) return
+        if (!payload) return
+        const myId = resolvedUserId || (typeof window !== 'undefined' ? localStorage.getItem('darion_cached_user_id') : null)
         // 1. Never ring if caller is self
-        if (payload.callerId === resolvedUserId) return
+        if (myId && payload.callerId === myId) return
         // 2. Strict recipient validation: only ring if current user is in recipientIds
         const recipients = payload.recipientIds || []
-        if (recipients.length > 0 && !recipients.includes(resolvedUserId)) return
+        if (myId && recipients.length > 0 && !recipients.includes(myId)) return
 
         triggerIncomingCall(payload)
       })

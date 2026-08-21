@@ -25,18 +25,22 @@ export const viewport: Viewport = {
   themeColor: '#0B57D0',
 }
 
-export default function RootLayout({
+import { getCurrentUserFast } from '@/lib/supabase/server'
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const user = await getCurrentUserFast().catch(() => null)
+
   return (
     <html lang="en" className="dark">
       <body className="antialiased bg-[var(--md-sys-color-surface-container-lowest)] dark:bg-[#070a12] text-[var(--md-sys-color-on-surface)] dark:text-slate-100 font-sans selection:bg-[var(--md-sys-color-primary)] selection:text-white min-h-screen overflow-x-hidden">
         <BrandingProvider initialBranding={DEFAULT_BRANDING}>
           {children}
-          <GlobalCallManager />
-          <GlobalPushNotificationManager />
+          <GlobalCallManager currentUserId={user?.id} />
+          <GlobalPushNotificationManager userId={user?.id} />
         </BrandingProvider>
       </body>
     </html>

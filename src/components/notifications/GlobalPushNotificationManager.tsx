@@ -93,17 +93,38 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
     }
   }, [registerPushSubscription])
 
-  // Resolve current user ID
+  // Resolve current user ID with zero-latency localStorage cache fallback
   useEffect(() => {
     if (userId) {
       setCurrentUserId(userId)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('darion_cached_user_id', userId)
+      }
       return
+    }
+
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('darion_cached_user_id')
+      if (cached) setCurrentUserId(cached)
+
+      try {
+        const keys = Object.keys(localStorage)
+        const sbKey = keys.find((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+        if (sbKey) {
+          const parsed = JSON.parse(localStorage.getItem(sbKey) || '{}')
+          const uid = parsed?.user?.id || parsed?.id
+          if (uid) setCurrentUserId(uid)
+        }
+      } catch {}
     }
 
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
       if (data.user?.id) {
         setCurrentUserId(data.user.id)
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('darion_cached_user_id', data.user.id)
+        }
       }
     })
   }, [userId])
