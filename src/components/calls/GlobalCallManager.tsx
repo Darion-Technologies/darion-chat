@@ -11,6 +11,8 @@ import {
   Video,
   Radio,
 } from 'lucide-react'
+import { DirectCallModal } from './DirectCallModal'
+import { FloatingCallBubble } from './FloatingCallBubble'
 
 interface GlobalCallManagerProps {
   currentUserId?: string
@@ -27,10 +29,28 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
   const [outgoingStatus, setOutgoingStatus] = useState<'calling' | 'ringing'>('calling')
   const [outgoingTimer, setOutgoingTimer] = useState(0)
 
+  // Active Direct 1:1 Call State (WhatsApp / FaceTime style)
+  const [activeDirectCall, setActiveDirectCall] = useState<{
+    callId: string
+    callerName: string
+    callerAvatar?: string
+    callType: 'audio' | 'video'
+    isInitiator: boolean
+  } | null>(null)
+  const [isCallMinimized, setIsCallMinimized] = useState(false)
+  const [minimizedDuration, setMinimizedDuration] = useState(0)
+  const [isCallMuted, setIsCallMuted] = useState(false)
+
+  const outgoingCallRef = useRef<CallSessionPayload | null>(null)
   const incomingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const outgoingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const outgoingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const broadcastChannelRef = useRef<any>(null)
+
+  // Sync outgoingCallRef
+  useEffect(() => {
+    outgoingCallRef.current = outgoingCall
+  }, [outgoingCall])
 
   // Resolve user id
   useEffect(() => {
@@ -47,6 +67,7 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
   // Start outgoing call handler
   const startOutgoingCall = (payload: CallSessionPayload) => {
     setOutgoingCall(payload)
+    outgoingCallRef.current = payload
     setOutgoingStatus('calling') // Start with "Calling..." (waiting for recipient to acknowledge)
     setOutgoingTimer(0)
 
@@ -118,11 +139,10 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
         // 1. Never ring if caller is self
         if (payload.callerId === resolvedUserId) return
         // 2. Strict recipient validation: only ring if current user is in recipientIds
-        if (Array.isArray(payload.recipientIds) && payload.recipientIds.length > 0) {
-          if (payload.recipientIds.includes(resolvedUserId)) {
-            triggerIncomingCall(payload)
-          }
-        }
+        const recipients = payload.recipientIds || []
+        if (recipients.length > 0 && !recipients.includes(resolvedUserId)) return
+
+        triggerIncomingCall(payload)
       })
       .on('broadcast', { event: 'call_ringing' }, ({ payload }) => {
         // Recipient is verified online and actively ringing:
@@ -139,6 +159,7 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
         if (outgoingTimeoutRef.current) clearTimeout(outgoingTimeoutRef.current)
         if (outgoingIntervalRef.current) clearInterval(outgoingIntervalRef.current)
         setOutgoingCall(null)
+        outgoingCallRef.current = null
         setOutgoingTimer(0)
       })
       .on('broadcast', { event: 'call_cancelled' }, () => {
@@ -148,13 +169,24 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
         setIncomingCall(null)
       })
       .on('broadcast', { event: 'call_accepted' }, ({ payload }) => {
-        // When accepted, transition caller to meet room
+        // When accepted, transition caller to Direct 1:1 Call Screen
         soundEffects.stopRinging()
         if (outgoingTimeoutRef.current) clearTimeout(outgoingTimeoutRef.current)
         if (outgoingIntervalRef.current) clearInterval(outgoingIntervalRef.current)
+
+        const cur = outgoingCallRef.current
         setOutgoingCall(null)
-        if (payload?.meetUrl) {
-          router.push(payload.meetUrl)
+        outgoingCallRef.current = null
+
+        if (cur) {
+          setActiveDirectCall({
+            callId: cur.roomCode,
+            callerName: cur.conversationName || cur.callerName,
+            callerAvatar: cur.callerAvatar,
+            callType: cur.callType,
+            isInitiator: true,
+          })
+          setIsCallMinimized(false)
         }
       })
       .subscribe()
@@ -214,6 +246,10 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
     const meetUrl = incomingCall.meetUrl
     const targetRoom = incomingCall.roomCode
     const targetCaller = incomingCall.callerId
+    const callerName = incomingCall.callerName
+    const callerAvatar = incomingCall.callerAvatar
+    const callType = incomingCall.callType
+
     setIncomingCall(null)
 
     // Broadcast to caller that call was accepted
@@ -231,7 +267,15 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
       response: 'accept',
     })
 
-    router.push(meetUrl)
+    // Open dedicated 1:1 Direct Call UI
+    setActiveDirectCall({
+      callId: targetRoom,
+      callerName,
+      callerAvatar,
+      callType,
+      isInitiator: false,
+    })
+    setIsCallMinimized(false)
   }
 
   // Handle Decline Incoming Call
@@ -414,21 +458,46 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
                 </button>
                 <span className="text-xs text-slate-400 font-medium">Cancel</span>
               </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleJoinOutgoingRoom}
-                  className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white flex items-center justify-center shadow-lg transition-all cursor-pointer"
-                  title="Enter Room"
-                >
-                  <Video className="w-6 h-6" />
-                </button>
-                <span className="text-xs text-slate-400 font-medium">Enter Room</span>
-              </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* 3. ACTIVE 1:1 DIRECT CALL FULLSCREEN MODAL */}
+      {activeDirectCall && !isCallMinimized && (
+        <DirectCallModal
+          callId={activeDirectCall.callId}
+          callerName={activeDirectCall.callerName}
+          callerAvatar={activeDirectCall.callerAvatar}
+          callType={activeDirectCall.callType}
+          isInitiator={activeDirectCall.isInitiator}
+          onClose={() => {
+            setActiveDirectCall(null)
+            setIsCallMinimized(false)
+          }}
+          onMinimize={(dur, muted) => {
+            setMinimizedDuration(dur)
+            setIsCallMuted(muted)
+            setIsCallMinimized(true)
+          }}
+        />
+      )}
+
+      {/* 4. MINIMIZED DRAGGABLE FLOATING CALL BUBBLE (Allows texting while calling) */}
+      {activeDirectCall && isCallMinimized && (
+        <FloatingCallBubble
+          callerName={activeDirectCall.callerName}
+          callerAvatar={activeDirectCall.callerAvatar}
+          callType={activeDirectCall.callType}
+          callDuration={minimizedDuration}
+          isMuted={isCallMuted}
+          onToggleMute={() => setIsCallMuted(!isCallMuted)}
+          onEndCall={() => {
+            setActiveDirectCall(null)
+            setIsCallMinimized(false)
+          }}
+          onExpand={() => setIsCallMinimized(false)}
+        />
       )}
     </>
   )

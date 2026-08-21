@@ -125,7 +125,7 @@ export const ChatMeetCard: React.FC<ChatMeetCardProps> = ({ metadata }) => {
 
           <div className="min-w-0 flex-1 overflow-hidden">
             <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 truncate">
-              <span className="px-1.5 py-0.5 rounded-md bg-[var(--md-sys-color-primary)]/15 text-[var(--md-sys-color-primary)] border border-[var(--md-sys-color-primary)]/30 text-[9px] font-black uppercase tracking-wider border shrink-0">
+              <span className="px-1.5 py-0.5 rounded-md bg-[var(--md-sys-color-primary)]/15 text-[var(--md-sys-color-primary)] border border-[var(--md-sys-color-primary)]/30 text-[9px] font-black uppercase tracking-wider shrink-0">
                 {isCalling ? 'Calling...' : 'Ringing...'}
               </span>
               <span className="text-[9.5px] text-[var(--md-sys-color-on-surface-variant)] font-bold uppercase truncate">
@@ -141,18 +141,19 @@ export const ChatMeetCard: React.FC<ChatMeetCardProps> = ({ metadata }) => {
           </div>
         </div>
 
-        <Link
-          href={meetUrl}
-          className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] sm:text-xs transition-all active:scale-95 shadow-sm shrink-0"
+        <button
+          type="button"
+          onClick={handleCallBack}
+          className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] sm:text-xs transition-all active:scale-95 shadow-sm shrink-0 cursor-pointer"
         >
           <span>Answer</span>
           <ArrowUpRight className="w-3.5 h-3.5" />
-        </Link>
+        </button>
       </div>
     )
   }
 
-  // 3. SUCCESSFUL CONNECTED MEETING (RULED ENTERPRISE UI)
+  // 3. SUCCESSFUL CONNECTED DIRECT CALL (WHATSAPP STYLE CALL LOG)
   return (
     <div className="w-full min-w-0 max-w-full sm:max-w-[320px] rounded-2xl bg-[var(--md-sys-color-surface-container)] border border-emerald-500/40 shadow-xs hover:shadow-md p-2.5 sm:p-3 flex items-center justify-between gap-2 sm:gap-2.5 text-[var(--md-sys-color-on-surface)] select-none transition-all overflow-hidden">
       <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 overflow-hidden">
@@ -167,29 +168,27 @@ export const ChatMeetCard: React.FC<ChatMeetCardProps> = ({ metadata }) => {
         <div className="min-w-0 flex-1 overflow-hidden">
           <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 truncate">
             <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider shrink-0">
-              Meeting
-            </span>
-            <span className="text-[9.5px] text-[var(--md-sys-color-on-surface-variant)] font-bold uppercase truncate">
-              • {roomCode}
+              {callType === 'video' ? 'Video Call' : 'Voice Call'}
             </span>
           </div>
           <h4 className="text-xs sm:text-[13px] font-bold text-[var(--md-sys-color-on-surface)] truncate">
             {meetTitle}
           </h4>
           <p className="text-[10px] sm:text-[11px] text-[var(--md-sys-color-on-surface-variant)] truncate mt-0.5">
-            Host: {hostName} {formattedTime && `• ${formattedTime}`}
+            {hostName} {formattedTime && `• ${formattedTime}`}
           </p>
         </div>
       </div>
 
-      <Link
-        href={meetUrl}
-        target="_blank"
-        className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] sm:text-xs transition-all active:scale-95 shadow-sm shrink-0"
+      <button
+        type="button"
+        onClick={handleCallBack}
+        className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[var(--md-sys-color-primary)] hover:opacity-90 text-[var(--md-sys-color-on-primary)] font-bold text-[11px] sm:text-xs transition-all active:scale-95 shadow-sm shrink-0 cursor-pointer"
+        title="Call back"
       >
-        <span>Join</span>
-        <ArrowUpRight className="w-3.5 h-3.5" />
-      </Link>
+        {callType === 'video' ? <Video className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />}
+        <span>Call</span>
+      </button>
     </div>
   )
 }
