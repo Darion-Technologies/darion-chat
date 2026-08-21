@@ -64,6 +64,28 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
     })
   }, [currentUserId])
 
+  // Handle push notification deep links (e.g. ?callId=...&action=accept)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const callId = params.get('callId')
+    const action = params.get('action')
+    const callType = (params.get('callType') as 'audio' | 'video') || 'audio'
+    const callerName = params.get('callerName') || 'Teammate'
+
+    if (callId && action === 'accept') {
+      setActiveDirectCall({
+        callId,
+        callerName: decodeURIComponent(callerName),
+        callType,
+        isInitiator: false,
+      })
+      setIsCallMinimized(false)
+      // Clean query params without reload
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
+
   // Start outgoing call handler
   const startOutgoingCall = (payload: CallSessionPayload) => {
     setOutgoingCall(payload)

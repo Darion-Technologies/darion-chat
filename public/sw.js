@@ -23,24 +23,26 @@ self.addEventListener('push', (event) => {
     if (type === 'incoming_call') {
       const callData = data.data || {}
       const callerName = callData.callerName || 'Teammate'
-      const callType = callData.callType === 'audio' ? 'Audio' : 'Video'
+      const callType = callData.callType === 'audio' ? 'Voice' : 'Video'
+      const roomCode = callData.roomCode || callData.callId || ''
 
       event.waitUntil(
         self.registration.showNotification(`📞 Incoming ${callType} Call: ${callerName}`, {
-          body: data.body || `${callerName} is calling you on Darion Meet. Click to answer.`,
+          body: data.body || `${callerName} is calling you. Tap to answer.`,
           icon: '/icon.svg',
           badge: '/icon.svg',
-          tag: `call-${callData.callId || Date.now()}`,
+          tag: `call-${roomCode || Date.now()}`,
           requireInteraction: true,
-          vibrate: [500, 250, 500, 250, 500, 250, 500],
+          renotify: true,
+          vibrate: [500, 250, 500, 250, 500, 250, 500, 250, 500],
           data: {
-            url: callData.meetUrl || `/meet/${callData.roomCode || ''}`,
+            url: `/?callId=${roomCode}&callType=${callData.callType || 'audio'}&callerName=${encodeURIComponent(callerName)}&action=accept`,
             type: 'incoming_call',
             callId: callData.callId,
-            roomCode: callData.roomCode,
+            roomCode: roomCode,
           },
           actions: [
-            { action: 'accept', title: '✅ Accept' },
+            { action: 'accept', title: '📞 Answer' },
             { action: 'decline', title: '❌ Decline' },
           ],
         })

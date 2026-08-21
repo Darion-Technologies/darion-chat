@@ -10,6 +10,8 @@ import {
 } from 'lucide-react'
 import { soundEffects } from '@/lib/utils/soundEffects'
 import { richHaptics } from '@/lib/utils/richHaptics'
+import { VAPID_PUBLIC_KEY, urlBase64ToUint8Array } from '@/lib/push/vapidConfig'
+import { savePushSubscriptionAction } from '@/app/actions/pushSubscriptions'
 
 interface GlobalPushNotificationManagerProps {
   userId?: string
@@ -23,6 +25,37 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
   const isListeningRef = useRef(false)
 
+  // Hardware Push Subscription Registration
+  const registerPushSubscription = useCallback(async () => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) return
+    try {
+      const reg = await navigator.serviceWorker.ready
+      let sub = await reg.pushManager.getSubscription()
+      if (!sub && VAPID_PUBLIC_KEY) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        })
+      }
+      if (sub) {
+        const subJson = sub.toJSON()
+        if (subJson.endpoint && subJson.keys?.p256dh && subJson.keys?.auth) {
+          await savePushSubscriptionAction({
+            endpoint: subJson.endpoint,
+            expirationTime: subJson.expirationTime,
+            keys: {
+              p256dh: subJson.keys.p256dh,
+              auth: subJson.keys.auth,
+            },
+            userAgent: navigator.userAgent,
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Error establishing hardware push subscription:', err)
+    }
+  }, [])
+
   // Initialize permission and sound settings
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -33,7 +66,9 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
 
       if ('Notification' in window) {
         setPermissionState(Notification.permission)
-        if (Notification.permission === 'default') {
+        if (Notification.permission === 'granted') {
+          registerPushSubscription()
+        } else if (Notification.permission === 'default') {
           const dismissedAt = localStorage.getItem('push_perm_dismissed_at')
           const isRecentlyDismissed = dismissedAt && Date.now() - Number(dismissedAt) < 24 * 60 * 60 * 1000
           if (!isRecentlyDismissed) {
@@ -44,12 +79,19 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
 
       // Register background Service Worker
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch((err) => {
-          console.error('ServiceWorker registration error:', err)
-        })
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then(() => {
+            if (Notification.permission === 'granted') {
+              registerPushSubscription()
+            }
+          })
+          .catch((err) => {
+            console.error('ServiceWorker registration error:', err)
+          })
       }
     }
-  }, [])
+  }, [registerPushSubscription])
 
   // Resolve current user ID
   useEffect(() => {
@@ -267,8 +309,9 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
       setShowPermissionBanner(false)
       if (result === 'granted') {
         soundEffects.playNotificationSound()
+        await registerPushSubscription()
         new Notification('🔔 Notifications Enabled!', {
-          body: 'You will receive real-time push alerts for messages, shifts, video meetings, and payments.',
+          body: 'You will receive real-time push alerts for messages and video/voice calls even when the app is closed.',
           icon: '/icon.svg',
         })
       }
