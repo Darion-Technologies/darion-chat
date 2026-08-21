@@ -1562,10 +1562,14 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
       // Broadcast to all clients in real-time
       const supabase = createClient()
       const callChannel = supabase.channel('global-call-signaling')
-      callChannel.send({
-        type: 'broadcast',
-        event: 'incoming_call',
-        payload: res.callPayload,
+      callChannel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          callChannel.send({
+            type: 'broadcast',
+            event: 'incoming_call',
+            payload: res.callPayload,
+          })
+        }
       })
 
       const fresh = await getConversationMessagesAction(activeConvId)

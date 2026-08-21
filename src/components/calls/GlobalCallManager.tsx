@@ -112,6 +112,33 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
 
     setIncomingCall(incoming)
     soundEffects.startRingingIncoming()
+    richHaptics.impact('heavy')
+
+    // Trigger Native / Browser Heads-Up Notification if backgrounded
+    try {
+      const cap = (window as any).Capacitor
+      const localNotif = cap?.Plugins?.LocalNotifications
+      if (localNotif) {
+        localNotif.schedule({
+          notifications: [
+            {
+              title: `📞 Incoming ${incoming.callType === 'audio' ? 'Voice' : 'Video'} Call`,
+              body: `${incoming.callerName} is calling you. Tap to answer.`,
+              id: Math.floor(Math.random() * 1000000),
+              channelId: 'darion_chat_high_priority',
+              extra: { roomCode: incoming.roomCode, callType: incoming.callType },
+              schedule: { at: new Date(Date.now() + 50) },
+            },
+          ],
+        }).catch(() => {})
+      } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification(`📞 Incoming ${incoming.callType === 'audio' ? 'Voice' : 'Video'} Call: ${incoming.callerName}`, {
+          body: `${incoming.callerName} is calling you. Tap to answer.`,
+          icon: '/icon.svg',
+          tag: `call-${incoming.roomCode}`,
+        })
+      }
+    } catch {}
 
     // Acknowledge to caller that recipient device is ONLINE and actively RINGING
     if (broadcastChannelRef.current) {
@@ -213,7 +240,7 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
       })
       .subscribe()
 
-    // Database notifications table change listener
+    // Database notifications & chat_messages table change listener for 100% reliable ringing
     let notifChannel: any = null
     if (resolvedUserId) {
       notifChannel = supabase
@@ -228,25 +255,61 @@ export const GlobalCallManager: React.FC<GlobalCallManagerProps> = ({ currentUse
           },
           (payload) => {
             const item = payload.new as any
-            if (item?.type === 'meet_started') {
+            if (item?.type === 'meet_started' || item?.type === 'incoming_call') {
+              const meta = item.metadata || {}
               const meetUrl = item.link || ''
-              const roomCode = meetUrl.replace('/meet/', '') || 'dar-video'
+              const roomCode = meta.roomCode || meetUrl.replace('/meet/', '') || `dar-call-${Date.now()}`
 
               const incoming: CallSessionPayload = {
-                callId: item.id,
+                callId: meta.callId || item.id,
                 roomCode,
-                callerId: item.metadata?.callerId || '',
-                callerName: item.title?.replace(/📞 Incoming (VIDEO|AUDIO) Call: /i, '') || 'Team Member',
-                callerAvatar: item.metadata?.callerAvatar || '',
-                callerRole: item.metadata?.callerRole || '',
-                conversationId: item.metadata?.conversationId || '',
-                callType: item.title?.includes('AUDIO') ? 'audio' : 'video',
-                recipientIds: item.metadata?.recipientIds || (resolvedUserId ? [resolvedUserId] : []),
-                meetUrl: item.link || `/meet/${roomCode}`,
-                startedAt: new Date().toISOString(),
+                callerId: meta.callerId || '',
+                callerName: meta.callerName || item.title?.replace(/📞 Incoming (VIDEO|AUDIO|Voice|Video) Call:?/i, '').trim() || 'Team Member',
+                callerAvatar: meta.callerAvatar || '',
+                callerRole: meta.callerRole || '',
+                conversationId: meta.conversationId || '',
+                callType: meta.callType || (item.title?.toLowerCase().includes('audio') || item.title?.toLowerCase().includes('voice') ? 'audio' : 'video'),
+                recipientIds: meta.recipientIds || (resolvedUserId ? [resolvedUserId] : []),
+                meetUrl: meta.meetUrl || item.link || `/meet/${roomCode}`,
+                startedAt: item.created_at || new Date().toISOString(),
               }
 
               triggerIncomingCall(incoming)
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chat_messages',
+          },
+          (payload) => {
+            const msg = payload.new as any
+            if (!msg || !resolvedUserId) return
+            if (msg.sender_id === resolvedUserId) return
+            if (msg.message_type === 'meet_card') {
+              const meta = msg.metadata || {}
+              if (meta.status === 'calling') {
+                const recipients = meta.recipientIds || []
+                if (recipients.length === 0 || recipients.includes(resolvedUserId)) {
+                  const incoming: CallSessionPayload = {
+                    callId: meta.roomId || msg.id,
+                    roomCode: meta.roomCode || `dar-${meta.callType || 'video'}-${Date.now()}`,
+                    callerId: msg.sender_id,
+                    callerName: meta.hostName || 'Team Member',
+                    callerAvatar: '',
+                    callerRole: 'member',
+                    conversationId: msg.conversation_id,
+                    callType: meta.callType || 'video',
+                    recipientIds: recipients.length > 0 ? recipients : [resolvedUserId],
+                    meetUrl: meta.meetUrl || `/meet/${meta.roomCode}`,
+                    startedAt: meta.startedAt || msg.created_at || new Date().toISOString(),
+                  }
+                  triggerIncomingCall(incoming)
+                }
+              }
             }
           }
         )
