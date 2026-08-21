@@ -1577,10 +1577,41 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
     }
   }
 
-  // Handle File Upload
+  // Handle 0ms Optimistic File & Image Upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !activeConvId) return
+
+    const tempFileId = `temp-file-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    const nowIso = new Date().toISOString()
+    const isImage = file.type.startsWith('image/')
+    const localBlobUrl = isImage ? URL.createObjectURL(file) : undefined
+
+    // 1. Instantly pin optimistic file card in chat (0ms!)
+    const optimisticMsg: ChatMessageItem = {
+      id: tempFileId,
+      conversationId: activeConvId,
+      senderId: currentUserId,
+      senderName: currentUserName,
+      senderAvatarUrl: currentUserAvatar,
+      senderRole: currentUserRole,
+      content: `Shared file: ${file.name}`,
+      messageType: 'file',
+      fileUrl: localBlobUrl,
+      fileName: file.name,
+      fileSizeBytes: file.size,
+      fileType: file.type,
+      reactions: [],
+      isEdited: false,
+      isPinned: false,
+      status: 'sending',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    }
+
+    setMessages((prev) => [...prev, optimisticMsg])
+    soundEffects.playMessageSentSound()
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
 
     try {
       setSending(true)
@@ -1593,7 +1624,7 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
         throw new Error(uploadRes.error || 'Failed to upload attachment')
       }
 
-      await sendMessageAction({
+      const sendRes = await sendMessageAction({
         conversationId: activeConvId,
         content: `Shared file: ${file.name}`,
         messageType: 'file',
@@ -1602,15 +1633,34 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
         fileSizeBytes: file.size,
         fileType: file.type,
       })
-      soundEffects.playMessageSentSound()
 
-      const fresh = await getConversationMessagesAction(activeConvId)
-      setMessages(fresh)
+      // In-place reconciliation: update the temporary file item with real DB UUID and permanent URL
+      if (sendRes && sendRes.id) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === tempFileId
+              ? {
+                  ...m,
+                  id: sendRes.id,
+                  fileUrl: uploadRes.url,
+                  status: 'sent',
+                }
+              : m
+          )
+        )
+      } else {
+        const fresh = await getConversationMessagesAction(activeConvId)
+        setMessages((prev) => {
+          const nonReconciled = prev.filter((m) => m.id.startsWith('temp-') && m.id !== tempFileId)
+          return [...fresh, ...nonReconciled]
+        })
+      }
+
       broadcastChatActivity()
       broadcastTypingStatus(false)
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
     } catch (err: any) {
-      alert(err.message || 'Failed to upload attachment')
+      console.error('File upload failed:', err)
+      setMessages((prev) => prev.filter((m) => m.id !== tempFileId))
     } finally {
       setSending(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -1853,6 +1903,10 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
             activeMobileTab={activeMobileTab}
             onSelectConversation={(id) => {
               setActiveConvId(id)
+            }}
+            onRefresh={async () => {
+              const fresh = await getConversationsListAction()
+              setConversations(fresh)
             }}
           />
         </div>
@@ -2118,11 +2172,6 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
                       onTouchMove={(e) => handleTouchMove(msg, isMe, e)}
                       onTouchEnd={(e) => handleTouchEnd(msg, isMe, e)}
                       onTouchCancel={(e) => handleTouchEnd(msg, isMe, e)}
-                      onClick={() => {
-                        if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                          setMobileActionMessage(msg)
-                        }
-                      }}
                       style={{
                         transform: swipingMessageId === msg.id ? `translateX(${swipeOffset}px)` : 'translateX(0px)',
                         transition: swipingMessageId === msg.id ? 'none' : 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)',
@@ -2244,6 +2293,10 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
                                   <span>{formatMessageTime(msg.createdAt)}</span>
                                   {(() => {
                                     const isDirect = activeConv?.type === 'direct'
+                                    if (msg.status === 'sending' || msg.id.startsWith('temp-')) {
+                                      return <span title="Sending..."><Clock className="w-3 h-3 opacity-60 animate-pulse" /></span>
+                                    }
+
                                     const otherId = activeConv?.otherParticipant?.userId
                                     const isOtherOnline = otherId ? onlineUserIds.has(otherId) : false
 
@@ -2439,6 +2492,14 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
                               
                               {/* 100% Accurate Dynamic Delivery Status (Sent vs Delivered vs Seen) */}
                               {(() => {
+                                if (msg.status === 'sending' || msg.id.startsWith('temp-')) {
+                                  return (
+                                    <span className="inline-flex items-center text-white/80" title="Uploading & sending...">
+                                      <Clock className="w-3 h-3 animate-pulse" />
+                                    </span>
+                                  )
+                                }
+
                                 const isDirect = activeConv?.type === 'direct'
                                 const otherId = activeConv?.otherParticipant?.userId
                                 const isOtherOnline = otherId ? onlineUserIds.has(otherId) : false
@@ -3000,6 +3061,7 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
             <button
               type="button"
               onClick={() => {
+                richHaptics.selection()
                 setActiveMobileTab('home')
                 setActiveNavShortcut('home')
               }}
@@ -3017,6 +3079,7 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
             <button
               type="button"
               onClick={() => {
+                richHaptics.selection()
                 setActiveMobileTab('dms')
                 setActiveNavShortcut('home')
               }}
@@ -3034,6 +3097,7 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
             <button
               type="button"
               onClick={() => {
+                richHaptics.selection()
                 setActiveMobileTab('spaces')
                 setActiveNavShortcut('home')
               }}
@@ -3055,7 +3119,10 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
             {/* Tab 4: More ... */}
             <button
               type="button"
-              onClick={() => setIsMobileMoreOpen(true)}
+              onClick={() => {
+                richHaptics.selection()
+                setIsMobileMoreOpen(true)
+              }}
               className="flex items-center justify-center p-2 rounded-full text-[var(--md-sys-color-on-surface-variant)] hover:text-[var(--md-sys-color-on-surface)] transition-all cursor-pointer"
               title="More options"
             >
@@ -3066,7 +3133,10 @@ export const TeamsChatWorkspace: React.FC<TeamsChatWorkspaceProps> = ({
           {/* Floating Action Button (FAB +) */}
           <button
             type="button"
-            onClick={() => (activeMobileTab === 'spaces' ? setIsNewChannelOpen(true) : setIsNewChatOpen(true))}
+            onClick={() => {
+              richHaptics.impact('medium')
+              activeMobileTab === 'spaces' ? setIsNewChannelOpen(true) : setIsNewChatOpen(true)
+            }}
             className="pointer-events-auto w-14 h-14 rounded-2xl bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] shadow-xl hover:shadow-2xl active:scale-95 transition-all flex items-center justify-center cursor-pointer border border-[var(--md-sys-color-outline-variant)]/50"
             title="New Chat"
           >

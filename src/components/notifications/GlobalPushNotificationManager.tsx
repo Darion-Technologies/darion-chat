@@ -6,22 +6,10 @@ import { createClient } from '@/lib/supabase/client'
 import { NotificationItem, NotificationType } from '@/lib/utils/notifications'
 import {
   Bell,
-  MessageSquare,
-  Video,
-  Calendar,
-  Banknote,
-  Clock,
-  Palmtree,
   X,
-  Sparkles,
 } from 'lucide-react'
 import { soundEffects } from '@/lib/utils/soundEffects'
 import { richHaptics } from '@/lib/utils/richHaptics'
-
-interface ToastNotification extends NotificationItem {
-  toastId: string
-  dismissed?: boolean
-}
 
 interface GlobalPushNotificationManagerProps {
   userId?: string
@@ -30,7 +18,6 @@ interface GlobalPushNotificationManagerProps {
 export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManagerProps> = ({ userId }) => {
   const router = useRouter()
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(userId)
-  const [toasts, setToasts] = useState<ToastNotification[]>([])
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [permissionState, setPermissionState] = useState<NotificationPermission>('default')
   const [showPermissionBanner, setShowPermissionBanner] = useState(false)
@@ -53,6 +40,13 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
             setShowPermissionBanner(true)
           }
         }
+      }
+
+      // Register background Service Worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.error('ServiceWorker registration error:', err)
+        })
       }
     }
   }, [])
@@ -110,19 +104,7 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
         richHaptics.success()
       }
 
-      // 2. Spawn in-app floating toast
-      const toastId = `${notif.id || Math.random().toString(36).slice(2, 9)}_${Date.now()}`
-      const newToast: ToastNotification = { ...notif, toastId }
-
-      setToasts((prev) => [newToast, ...prev.slice(0, 3)]) // keep max 4 toasts on screen
-
-      // Auto dismiss: 4.5s for chat messages, 6.5s for others
-      const dismissDuration = notif.type === 'chat_message' ? 4500 : 6500
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.toastId !== toastId))
-      }, dismissDuration)
-
-      // 3. Trigger Native Capacitor / Android Push Notification (Heads-up banner + sound)
+      // 2. Trigger Native Capacitor / Android Push Notification (Heads-up banner + sound)
       try {
         const cap = (window as any).Capacitor
         const localNotif = cap?.Plugins?.LocalNotifications
@@ -302,37 +284,9 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
     }
   }
 
-  const dismissToast = (toastId: string) => {
-    setToasts((prev) => prev.filter((t) => t.toastId !== toastId))
-  }
-
-  const getIconForType = (type: NotificationType) => {
-    switch (type) {
-      case 'chat_message':
-      case 'chat_mention':
-        return <MessageSquare className="w-4 h-4 text-[var(--md-sys-color-primary)]" />
-      case 'meet_started':
-        return <Video className="w-4 h-4 text-emerald-500" />
-      case 'calendar_event':
-        return <Calendar className="w-4 h-4 text-sky-500" />
-      case 'payroll_settled':
-        return <Banknote className="w-4 h-4 text-emerald-600" />
-      case 'shift_approved':
-      case 'shift_assigned':
-      case 'timer_started':
-      case 'timer_stopped':
-        return <Clock className="w-4 h-4 text-indigo-500" />
-      case 'leave_requested':
-      case 'leave_status':
-        return <Palmtree className="w-4 h-4 text-amber-500" />
-      default:
-        return <Bell className="w-4 h-4 text-[var(--md-sys-color-primary)]" />
-    }
-  }
-
   return (
     <>
-      {/* 1. Browser Notification Permission Request Banner */}
+      {/* 1. System Notification Permission Request Banner (Minimal top dialog) */}
       {showPermissionBanner && permissionState === 'default' && (
         <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-lg w-[92%] rounded-2xl bg-[var(--md-sys-color-surface-container)] dark:bg-[#141b2b] border border-[var(--md-sys-color-primary)]/30 shadow-2xl p-3.5 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-center gap-3 min-w-0">
@@ -341,10 +295,10 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
             </div>
             <div className="min-w-0">
               <h4 className="text-xs font-bold text-[var(--md-sys-color-on-surface)] dark:text-white truncate">
-                Enable Instant Push Notifications
+                Enable Real System Push Notifications
               </h4>
               <p className="text-[11px] text-[var(--md-sys-color-on-surface-variant)] dark:text-slate-400 truncate">
-                Get real-time desktop alerts for chats, meetings, and shifts.
+                Get native alerts in your Android/Desktop notification shade for chats and calls.
               </p>
             </div>
           </div>
@@ -366,56 +320,6 @@ export const GlobalPushNotificationManager: React.FC<GlobalPushNotificationManag
           </div>
         </div>
       )}
-
-      {/* 2. Floating Top-Right Push Notification Toasts */}
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
-        {toasts.map((toast) => (
-          <div
-            key={toast.toastId}
-            onClick={() => {
-              if (toast.link) {
-                router.push(toast.link)
-                dismissToast(toast.toastId)
-              }
-            }}
-            className={`pointer-events-auto rounded-2xl bg-[var(--md-sys-color-surface-container)] dark:bg-[#141b2b] border border-[var(--md-sys-color-outline-variant)] dark:border-[#24324c] shadow-2xl p-3.5 transition-all hover:scale-[1.02] cursor-pointer flex items-start gap-3 animate-in fade-in slide-in-from-right-8 duration-200 ${
-              toast.link ? 'hover:border-[var(--md-sys-color-primary)]' : ''
-            }`}
-          >
-            <div className="w-8 h-8 rounded-xl bg-[var(--md-sys-color-surface-container-high)] dark:bg-[#1c263c] border border-[var(--md-sys-color-outline-variant)]/60 flex items-center justify-center flex-shrink-0 mt-0.5">
-              {getIconForType(toast.type)}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--md-sys-color-primary)]">
-                  {toast.type?.replace('_', ' ') || 'Notification'}
-                </span>
-                <span className="text-[10px] text-[var(--md-sys-color-on-surface-variant)] dark:text-slate-500">
-                  Just now
-                </span>
-              </div>
-              <h5 className="text-xs font-bold text-[var(--md-sys-color-on-surface)] dark:text-white truncate mt-0.5">
-                {toast.title}
-              </h5>
-              <p className="text-[11px] text-[var(--md-sys-color-on-surface-variant)] dark:text-slate-300 line-clamp-2 mt-0.5">
-                {toast.message}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                dismissToast(toast.toastId)
-              }}
-              className="p-1 rounded-lg text-[var(--md-sys-color-on-surface-variant)] hover:bg-[var(--md-sys-color-surface-container-high)] dark:hover:bg-slate-800 transition-colors"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
-      </div>
     </>
   )
 }

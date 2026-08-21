@@ -3,6 +3,7 @@
 import { createClient, createAdminClient, getCurrentUserFast } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { sendBulkNotification } from '@/lib/utils/notifications'
+import { sendPushNotificationToUser } from '@/lib/push/serverPush'
 
 function getSupabase() {
   try {
@@ -648,7 +649,7 @@ export async function sendMessageAction(payload: {
     })
     .eq('id', payload.conversationId)
 
-  // Dispatch push notifications to other participants
+  // Dispatch real background push notifications to other participants
   try {
     const { data: participants } = await supabase
       .from('chat_participants')
@@ -656,7 +657,30 @@ export async function sendMessageAction(payload: {
       .eq('conversation_id', effectiveConvId)
       .neq('user_id', user.id)
 
-    // Chat messages are delivered real-time via WebSockets and toast alerts without polluting persistent notifications table
+    if (participants && participants.length > 0) {
+      const senderName = (newMsg.profiles as any)?.full_name || 'Teammate'
+      const snippet =
+        newMsg.content ||
+        (newMsg.message_type === 'file'
+          ? `Shared file: ${newMsg.file_name || 'attachment'}`
+          : 'New message')
+
+      const promises = participants.map((p) =>
+        sendPushNotificationToUser({
+          userId: p.user_id,
+          title: `Message from ${senderName}`,
+          body: snippet.slice(0, 90),
+          type: 'chat_message',
+          link: `/?convId=${effectiveConvId}`,
+          data: {
+            conversationId: effectiveConvId,
+            messageId: newMsg.id,
+            url: `/?convId=${effectiveConvId}`,
+          },
+        })
+      )
+      await Promise.allSettled(promises)
+    }
   } catch (notifErr) {
     console.error('Error handling chat dispatch:', notifErr)
   }

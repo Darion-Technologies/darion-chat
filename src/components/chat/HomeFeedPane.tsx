@@ -21,6 +21,7 @@ import {
   CheckCheck,
   Maximize2,
   ChevronDown,
+  Loader2,
 } from 'lucide-react'
 import {
   ChatConversationItem,
@@ -32,6 +33,8 @@ import {
   leaveSpaceAction,
   blockUserAction,
 } from '@/app/actions/messages'
+import { usePullToRefresh } from '@/lib/hooks/usePullToRefresh'
+import { richHaptics } from '@/lib/utils/richHaptics'
 
 interface HomeFeedPaneProps {
   conversations: ChatConversationItem[]
@@ -42,6 +45,7 @@ interface HomeFeedPaneProps {
   onlineUserIds?: Set<string>
   userPresenceMap?: Record<string, { status: string; statusMessage?: string }>
   activeMobileTab?: 'home' | 'dms' | 'spaces'
+  onRefresh?: () => Promise<void> | void
 }
 
 export const HomeFeedPane: React.FC<HomeFeedPaneProps> = ({
@@ -52,11 +56,26 @@ export const HomeFeedPane: React.FC<HomeFeedPaneProps> = ({
   onlineUserIds,
   userPresenceMap,
   activeMobileTab = 'home',
+  onRefresh,
 }) => {
   const [onlyUnread, setOnlyUnread] = useState(false)
   const [threadFilter, setThreadFilter] = useState(false)
   const [activeMenuConvId, setActiveMenuConvId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
+
+  const {
+    pullDistance,
+    isRefreshing,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = usePullToRefresh({
+    onRefresh: async () => {
+      if (onRefresh) {
+        await onRefresh()
+      }
+    },
+  })
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -221,7 +240,30 @@ export const HomeFeedPane: React.FC<HomeFeedPaneProps> = ({
       )}
 
       {/* 2. RECENT CONVERSATIONS STREAM */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[var(--md-sys-color-outline-variant)]/30 pb-28 md:pb-4">
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="flex-1 overflow-y-auto divide-y divide-[var(--md-sys-color-outline-variant)]/30 pb-28 md:pb-4 relative"
+      >
+        {/* Elastic Pull-to-Refresh Spinner Indicator */}
+        {pullDistance > 0 && (
+          <div
+            style={{ height: `${pullDistance}px` }}
+            className="w-full flex items-center justify-center overflow-hidden transition-all duration-75"
+          >
+            <div
+              style={{
+                transform: `rotate(${pullDistance * 4}deg) scale(${Math.min(1, pullDistance / 40)})`,
+                opacity: Math.min(1, pullDistance / 30),
+              }}
+              className="w-7 h-7 rounded-full bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] flex items-center justify-center shadow-md border border-[var(--md-sys-color-primary)]/20"
+            >
+              <Loader2 className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[var(--md-sys-color-primary)]' : ''}`} />
+            </div>
+          </div>
+        )}
+
         {filteredConversations.length === 0 ? (
           <div className="py-16 text-center text-xs text-[var(--md-sys-color-on-surface-variant)] px-4">
             {onlyUnread
@@ -241,7 +283,10 @@ export const HomeFeedPane: React.FC<HomeFeedPaneProps> = ({
             return (
               <div
                 key={conv.id}
-                onClick={() => onSelectConversation(conv.id)}
+                onClick={() => {
+                  richHaptics.selection()
+                  onSelectConversation(conv.id)
+                }}
                 className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-all cursor-pointer group relative ${
                   isSelected
                     ? 'bg-[var(--md-sys-color-surface-container-high)] font-semibold'

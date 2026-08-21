@@ -1,0 +1,25 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Rounded Blue Background Tile -->
+    <path
+        android:fillColor="#0B57D0"
+        android:pathData="M30,18 L78,18 A12,12 0 0,1 90,30 L90,78 A12,12 0 0,1 78,90 L30,90 A12,12 0 0,1 18,78 L18,30 A12,12 0 0,1 30,18 Z" />
+
+    <!-- Chat Bubble Icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M72,36 L36,36 C32.7,36 30,38.7 30,42 L30,66 C30,69.3 32.7,72 36,72 L62,72 L76,82 L76,42 C76,38.7 73.3,36 72,36 Z" />
+
+    <!-- Message Lines / Inner Accent -->
+    <path
+        android:fillColor="#0B57D0"
+        android:pathData="M40,46 L68,46 A2,2 0 0,1 68,50 L40,50 A2,2 0 0,1 40,46 Z M40,56 L60,56 A2,2 0 0,1 60,60 L40,60 A2,2 0 0,1 40,56 Z" />
+
+    <!-- Sparkle Dot -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M78,28 A4,4 0 1,0 78,36 A4,4 0 1,0 78,28 Z" />
+</vector>

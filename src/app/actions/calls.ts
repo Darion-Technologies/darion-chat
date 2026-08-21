@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient, getCurrentUserFast } from '@/lib/supabase/server'
 import { sendNotification, sendBulkNotification } from '@/lib/utils/notifications'
+import { sendIncomingCallPush } from '@/lib/push/serverPush'
 import { revalidatePath } from 'next/cache'
 
 async function getSupabase() {
@@ -155,25 +156,17 @@ export async function initiateCallAction(params: {
       startedAt: room.started_at,
     }
 
-    // 5. Send ringing notification ONLY to resolved recipient IDs
+    // 5. Send high-priority ringing push notification ONLY to resolved recipient IDs
     if (recipientIds.length > 0) {
-      const notifications = recipientIds.map((uid) => ({
-        userId: uid,
-        type: 'meet_started' as const,
-        title: `📞 Incoming ${callType.toUpperCase()} Call: ${callerName}`,
-        message: `${callerName} is calling you for "${callTitle}". Click to answer.`,
-        link: `/meet/${room.room_code}`,
-        metadata: {
-          callerId: user.id,
-          callerName,
-          callerAvatar,
-          callerRole,
-          conversationId: effectiveConvId,
-          roomCode: room.room_code,
-          recipientIds,
-        },
-      }))
-      await sendBulkNotification(notifications)
+      await sendIncomingCallPush({
+        recipientIds,
+        callerName,
+        callerId: user.id,
+        callType,
+        callId: room.id,
+        roomCode: room.room_code,
+        meetUrl: `/meet/${room.room_code}`,
+      })
     }
 
     revalidatePath('/admin/messages')
